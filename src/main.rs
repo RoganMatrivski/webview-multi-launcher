@@ -19,6 +19,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 #[derive(Debug, Deserialize)]
 struct AppConfig {
     profiles: HashMap<String, PathBuf>,
+    url: url::Url,
 }
 
 fn main() -> Result<(), Report> {
@@ -83,8 +84,8 @@ fn main() -> Result<(), Report> {
         .add_source(File::with_name(&appdata_config))
         .build()?;
 
-    let profiles: AppConfig = cfg.try_deserialize()?;
-    let profiles = profiles.profiles;
+    let configs: AppConfig = cfg.try_deserialize()?;
+    let profiles = configs.profiles;
     let keys = profiles.keys().collect::<Vec<_>>();
     let choices = profiles
         .iter()
@@ -121,12 +122,11 @@ fn main() -> Result<(), Report> {
     let event_loop = EventLoop::new();
 
     let window = WindowBuilder::new()
-        .with_title("Profile WebView")
+        .with_title("WebView")
         .with_maximized(true)
         .build(&event_loop)?;
 
-    let builder =
-        WebViewBuilder::new_with_web_context(&mut web_context).with_url("https://mail.zoho.com");
+    let builder = WebViewBuilder::new_with_web_context(&mut web_context).with_url(configs.url);
 
     #[cfg(any(
         target_os = "windows",

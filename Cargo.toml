@@ -24,6 +24,7 @@ tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 wry = "0.54.3"
 filetime = "0.2.27"
+url = { version = "2.5.8", features = ["serde"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18.2"
