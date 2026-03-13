@@ -1,0 +1,34 @@
+[package]
+name = "webview-multi-launcher"
+version = "0.1.0"
+authors = ["Robin Mauritz <robinmauritzrm@gmail.com>"]
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[target.'cfg(target_env = "musl")'.dependencies]
+mimalloc = "^0.1.48"
+
+
+[dependencies]
+clap = { version = "^4.5", features = ["derive"] }
+color-eyre = { version = "0.6.3", features = ["capture-spantrace"] }
+config = "0.15.21"
+dialoguer = "0.12.0"
+directories = "6.0.0"
+gtk = "0.18.2"
+serde = { version = "1.0.228", features = ["derive"] }
+tao = "0.34.6"
+tokio = { version = "1.50.0", features = ["full", "macros", "signal"] }
+tracing = "0.1.41"
+tracing-error = "0.2.1"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+webkit2gtk = "2.0.2"
+wry = "0.54.3"
+
+[profile.dev.package.backtrace]
+opt-level = 3
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
