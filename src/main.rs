@@ -1,7 +1,7 @@
 use color_eyre::{Report, eyre::ContextCompat};
 use config::{Config, File};
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf, str::FromStr};
+use std::{collections::HashMap, path::PathBuf};
 
 use tao::{
     event::{Event, WindowEvent},
@@ -93,9 +93,9 @@ fn main() -> Result<(), Report> {
         .collect::<Vec<_>>();
 
     let profile = {
-        use dialoguer::Select;
+        use dialoguer::FuzzySelect;
 
-        let selection = Select::new()
+        let selection = FuzzySelect::new()
             .with_prompt("Pick the profile")
             .items(&choices)
             .default(0)
