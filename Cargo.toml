@@ -1,6 +1,6 @@
 [package]
 name = "webview-multi-launcher"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Robin Mauritz <robinmauritzrm@gmail.com>"]
 edition = "2024"
 repository = "https://github.com/RoganMatrivski/webview-multi-launcher"
