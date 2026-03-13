@@ -1,4 +1,4 @@
-use color_eyre::Report;
+use color_eyre::{Report, eyre::ContextCompat};
 use config::{Config, File};
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf, str::FromStr};
@@ -24,6 +24,53 @@ struct AppConfig {
 fn main() -> Result<(), Report> {
     let args = init::initialize()?;
 
+    let projdir =
+        directories::ProjectDirs::from("com.github", "roganmatrivski", "webview-multi-launcher")
+            .wrap_err("Failed to setup project file")?;
+    let appdata_dir = projdir.data_dir();
+    std::fs::create_dir_all(&appdata_dir)?;
+
+    let appdata_config = appdata_dir.join("config.toml");
+
+    if !appdata_config.exists() {
+        use std::fs::OpenOptions;
+        use std::time::SystemTime;
+
+        // Open the file, create if it doesn't exist
+        let _file = OpenOptions::new()
+            .create(true) // create if it doesn't exist
+            .write(true) // open for writing
+            .open(&appdata_config)?;
+
+        // Update the modification time
+        #[cfg(unix)]
+        {
+            let now = filetime::FileTime::from_system_time(SystemTime::now());
+            filetime::set_file_times(&appdata_config, now, now).unwrap();
+        }
+    }
+
+    tracing::trace!(p = args.profile, "profile");
+    if args.profile {
+        use std::process::Command;
+
+        // Use xdg-open to open it
+        let status = Command::new("xdg-open")
+            .arg(&appdata_config)
+            .status()
+            .expect("Failed to execute xdg-open");
+
+        if status.success() {
+            println!("Opened file successfully!");
+        } else {
+            eprintln!("Failed to open file");
+        }
+
+        return Ok(());
+    }
+
+    let appdata_config = appdata_config.to_string_lossy().to_string();
+
     let cfg = if let Some(c) = args.config {
         c.to_string_lossy().to_string()
     } else {
@@ -32,7 +79,8 @@ fn main() -> Result<(), Report> {
 
     let cfg = Config::builder()
         // TODO: Probably add appdata folder?
-        .add_source(File::with_name(&cfg))
+        .add_source(File::with_name(&cfg).required(false))
+        .add_source(File::with_name(&appdata_config))
         .build()?;
 
     let profiles: AppConfig = cfg.try_deserialize()?;
@@ -52,7 +100,9 @@ fn main() -> Result<(), Report> {
             .default(0)
             .interact()?;
 
-        profiles[keys[selection]].clone()
+        appdata_dir
+            .join("profiles")
+            .join(profiles[keys[selection]].clone())
     };
 
     #[cfg(not(any(
@@ -63,6 +113,7 @@ fn main() -> Result<(), Report> {
     )))]
     gtk::init().expect("failed to init gtk");
 
+    tracing::trace!(p = ?profile.to_string_lossy(), "Creating profile dir");
     std::fs::create_dir_all(&profile)?;
 
     let mut web_context = WebContext::new(Some(profile));

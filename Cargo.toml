@@ -27,6 +27,7 @@ wry = "0.54.3"
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18.2"
 webkit2gtk = "2.0.2"
+filetime = "0.2.27"
 
 [profile.dev.package.backtrace]
 opt-level = 3

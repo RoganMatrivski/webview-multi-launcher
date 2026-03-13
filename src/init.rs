@@ -9,9 +9,14 @@ pub struct Args {
     /// Verbosity log
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
-    /// Verbosity log
+
+    /// Config path
     #[arg(short, long)]
     pub config: Option<PathBuf>,
+
+    /// Open config file
+    #[arg(long)]
+    pub profile: bool,
 }
 
 const VERBOSE_LEVELS: &[&str] = &["info", "debug", "trace"];
