@@ -16,15 +16,17 @@ color-eyre = { version = "0.6.3", features = ["capture-spantrace"] }
 config = "0.15.21"
 dialoguer = "0.12.0"
 directories = "6.0.0"
-gtk = "0.18.2"
 serde = { version = "1.0.228", features = ["derive"] }
 tao = "0.34.6"
 tokio = { version = "1.50.0", features = ["full", "macros", "signal"] }
 tracing = "0.1.41"
 tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-webkit2gtk = "2.0.2"
 wry = "0.54.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18.2"
+webkit2gtk = "2.0.2"
 
 [profile.dev.package.backtrace]
 opt-level = 3
