@@ -60,7 +60,7 @@ fn main() -> Result<(), Report> {
         // Update the modification time
         #[cfg(unix)]
         {
-            let now = filetime::FileTime::from_system_time(SystemTime::now());
+            let now = filetime::FileTime::from_system_time(std::time::SystemTime::now());
             filetime::set_file_times(&appdata_config, now, now).unwrap();
         }
     }
@@ -163,13 +163,12 @@ fn main() -> Result<(), Report> {
 }
 
 fn open_path(p: &Path) -> eyre::Result<()> {
+    use color_eyre::eyre::Context;
     use std::process::Command;
 
     #[cfg(target_os = "windows")]
     {
         // On Windows, use `cmd /C start` to open the file
-
-        use color_eyre::eyre::Context;
         let status = Command::new("cmd")
             .arg("/C")
             .arg("start")
