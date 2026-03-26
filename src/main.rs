@@ -1,7 +1,13 @@
-use color_eyre::{Report, eyre::ContextCompat};
+use color_eyre::{
+    Report,
+    eyre::{self, ContextCompat},
+};
 use config::{Config, File};
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use tao::{
     event::{Event, WindowEvent},
@@ -35,13 +41,21 @@ fn main() -> Result<(), Report> {
 
     if !appdata_config.exists() {
         use std::fs::OpenOptions;
-        use std::time::SystemTime;
+        use std::io::Write;
 
-        // Open the file, create if it doesn't exist
-        let _file = OpenOptions::new()
+        // Define default configuration content based on AppConfig structure
+        let default_config_content = include_str!("default_profile.toml");
+
+        // Open the file, create if it doesn't exist, and truncate it if it does
+        // This ensures we write fresh default content when the file is created.
+        let mut _file = OpenOptions::new()
             .create(true) // create if it doesn't exist
             .write(true) // open for writing
+            .truncate(true) // clear existing content if file already exists (though !exists() check should prevent this)
             .open(&appdata_config)?;
+
+        // Write the default content to the file
+        _file.write_all(default_config_content.as_bytes())?;
 
         // Update the modification time
         #[cfg(unix)]
@@ -53,21 +67,7 @@ fn main() -> Result<(), Report> {
 
     tracing::trace!(p = args.profile, "profile");
     if args.profile {
-        use std::process::Command;
-
-        // Use xdg-open to open it
-        let status = Command::new("xdg-open")
-            .arg(&appdata_config)
-            .status()
-            .expect("Failed to execute xdg-open");
-
-        if status.success() {
-            println!("Opened file successfully!");
-        } else {
-            eprintln!("Failed to open file");
-        }
-
-        return Ok(());
+        return open_path(&appdata_config);
     }
 
     let appdata_config = appdata_config.to_string_lossy().to_string();
@@ -160,4 +160,50 @@ fn main() -> Result<(), Report> {
             *control_flow = ControlFlow::Exit;
         }
     });
+}
+
+fn open_path(p: &Path) -> eyre::Result<()> {
+    use std::process::Command;
+
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, use `cmd /C start` to open the file
+
+        use color_eyre::eyre::Context;
+        let status = Command::new("cmd")
+            .arg("/C")
+            .arg("start")
+            .arg("") // Empty title for the new window, important for `start` command syntax
+            .arg(p)
+            .status()
+            .wrap_err_with(|| format!("Failed to execute `cmd /C start` for path: {:?}", p))?;
+
+        if status.success() {
+            println!("Opened file successfully!");
+        } else {
+            // Using eyre::bail! for better error reporting with color_eyre
+            eyre::bail!("Failed to open file on Windows with status: {:?}", status);
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // On non-Windows systems (e.g., Linux), use `xdg-open`
+        let status = Command::new("xdg-open")
+            .arg(p)
+            .status()
+            .wrap_err_with(|| format!("Failed to execute `xdg-open` for path: {:?}", p))?;
+
+        if status.success() {
+            println!("Opened file successfully!");
+        } else {
+            // Using eyre::bail! for better error reporting with color_eyre
+            eyre::bail!(
+                "Failed to open file on Unix-like system with status: {:?}",
+                status
+            );
+        }
+    }
+
+    Ok(())
 }
